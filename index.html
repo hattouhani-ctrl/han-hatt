@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Forgotten Archives Vault</title>
+    <style>
+        /* Base styles */
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at center, rgba(10,10,10,0.8) 0%, rgba(0,0,0,0.9) 100%),
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="1" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.05"/></svg>');
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            padding: 30px;
+            border: 1px solid #1a1a1a;
+            border-radius: 5px;
+            background-color: rgba(15, 15, 15, 0.7);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            color: #4fc3f7;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.2rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Folder cards */
+        .folder-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .folder-card {
+            padding: 20px;
+            border: 1px solid #252525;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: rgba(20, 20, 20, 0.6);
+        }
+
+        .folder-card:hover {
+            border-color: #4fc3f7;
+            box-shadow: 0 0 15px rgba(79, 195, 247, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .folder-card.locked {
+            border-color: #f44336;
+        }
+
+        .folder-card.locked:hover {
+            border-color: #f44336;
+            box-shadow: 0 0 15px rgba(244, 67, 54, 0.2);
+        }
+
+        .folder-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .folder-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
+        .folder-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .folder-desc {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .folder-meta {
+            font-size: 0.8rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Document viewer */
+        .document-viewer {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #252525;
+            border-radius: 5px;
+            background-color: rgba(10, 10, 10, 0.8);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .document-viewer.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .document-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #252525;
+        }
+
+        .document-close {
+            cursor: pointer;
+            color: #666;
+            font-size: 1.2rem;
+        }
+
+        .document-close:hover {
+            color: #fff;
+        }
+
+        .document-content {
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        /* Password UI */
+        .password-ui {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #252525;
+            border-radius: 5px;
+            background-color: rgba(10, 10, 10, 0.8);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .password-ui.active {
+            display: block;
+        }
+
+        .password-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #252525;
+        }
+
+        .password-input-container {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .password-input {
+            flex-grow: 1;
+            padding: 10px;
+            background-color: #111;
+            border: 1px solid #252525;
+            border-right: none;
+            border-radius: 5px 0 0 5px;
+            color: #fff;
+            outline: none;
+        }
+
+        .password-input:focus {
+            border-color: #4fc3f7;
+        }
+
+        .password-submit {
+            padding: 10px 15px;
+            background-color: #4fc3f7;
+            color: #000;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .password-submit:hover {
+            background-color: #3ab4e9;
+        }
+
+        .password-error {
+            color: #f44336;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* File list */
+        .file-list {
+            margin-top: 20px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 5px;
+            background-color: rgba(20, 20, 20, 0.6);
+            border-radius: 3px;
+        }
+
+        .file-item:hover {
+            background-color: rgba(30, 30, 30, 0.8);
+        }
+
+        .file-icon {
+            margin-right: 10px;
+            color: #4fc3f7;
+        }
+
+        .file-name {
+            flex-grow: 1;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .file-warning {
+            font-size: 0.8rem;
+            color: #f44336;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #444;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FORGOTTEN ARCHIVES VAULT</h1>
+        
+        <div class="folder-grid">
+            <!-- Archives Folder -->
+            <div class="folder-card" id="archives-folder">
+                <div class="folder-header">
+                    <span class="folder-icon">📁</span>
+                    <span class="folder-title">ARCHIVES</span>
+                </div>
+                <p class="folder-desc">Public access granted. Contains declassified materials.</p>
+                <div class="folder-meta">
+                    <span>Last modified: ██-██-████</span>
+                </div>
+            </div>
+            
+            <!-- Lost Folder -->
+            <div class="folder-card locked" id="lost-folder">
+                <div class="folder-header">
+                    <span class="folder-icon">🔒</span>
+                    <span class="folder-title">LOST</span>
+                </div>
+                <p class="folder-desc">Restricted access. Password required.</p>
+                <div class="folder-meta">
+                    <span>Encryption level: ██████</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Archives Document Viewer -->
+        <div class="document-viewer" id="archives-viewer">
+            <div class="document-header">
+                <h2>RECOVERED DOCUMENT: WARNING.TXT</h2>
+                <span class="document-close" id="close-archives">✕</span>
+            </div>
+            <div class="document-content">
+=== SECURITY CLEARANCE LEVEL 1 ===
+                
+WARNING TO ALL PERSONNEL:
+                
+Unauthorized access to restricted materials may result in immediate termination of clearance and possible neural reconditioning.
+
+The following audio file was recovered from Sector 7. Play at your own risk.
+
+FILE: <a href="https://drive.google.com/file/d/1UxxzQAGSWkL8C_k-QN9OU3M2YYrib9nA/view?usp=drive_link" target="_blank" rel="noopener noreferrer">warning.mp3</a>
+
+CAUTION: This file will self-destruct after ██ views.
+            </div>
+        </div>
+        
+        <!-- Password UI -->
+        <div class="password-ui" id="password-ui">
+            <div class="password-header">
+                <h2>ACCESS DENIED</h2>
+                <span class="document-close" id="close-password">✕</span>
+            </div>
+            <p>This folder requires Level 4 clearance. Enter passcode:</p>
+            <div class="password-input-container">
+                <input type="password" class="password-input" id="password-input" placeholder="██████">
+                <button class="password-submit" id="password-submit">SUBMIT</button>
+            </div>
+            <p class="password-error" id="password-error">Invalid passcode. Try again.</p>
+        </div>
+        
+        <!-- Hidden Content (revealed after password) -->
+        <div class="document-viewer" id="hidden-content">
+            <div class="document-header">
+                <h2>LOST FILES RECOVERED</h2>
+                <span class="document-close" id="close-hidden">✕</span>
+            </div>
+            <div class="file-list">
+                <div class="file-item">
+                    <span class="file-icon">📄</span>
+                    <span class="file-name"><a href="https://drive.google.com/file/d/1CLkUkBkTgGrraJfgntrRApdIqd7lJM86/view?usp=drive_link" target="_blank" rel="noopener noreferrer">classified_report.txt</a></span>
+                    <span class="file-size">4KB</span>
+                </div>
+<p class="file-warning">WARNING: These files will be permanently erased in ██ days.</p>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Listen closely. The files remember.</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const archivesFolder = document.getElementById('archives-folder');
+        const lostFolder = document.getElementById('lost-folder');
+        const archivesViewer = document.getElementById('archives-viewer');
+        const passwordUI = document.getElementById('password-ui');
+        const hiddenContent = document.getElementById('hidden-content');
+        const passwordInput = document.getElementById('password-input');
+        const passwordSubmit = document.getElementById('password-submit');
+        const passwordError = document.getElementById('password-error');
+        const closeArchives = document.getElementById('close-archives');
+        const closePassword = document.getElementById('close-password');
+        const closeHidden = document.getElementById('close-hidden');
+
+        // WARNING: Client-side password check is not secure for sensitive data
+        // This is for ARG/testing purposes only
+        const CORRECT_PASSWORD = '1234';
+
+        // Event Listeners
+        archivesFolder.addEventListener('click', () => {
+            archivesViewer.classList.add('active');
+            passwordUI.classList.remove('active');
+            hiddenContent.classList.remove('active');
+        });
+
+        lostFolder.addEventListener('click', () => {
+            passwordUI.classList.add('active');
+            archivesViewer.classList.remove('active');
+            hiddenContent.classList.remove('active');
+            passwordError.style.display = 'none';
+            passwordInput.value = '';
+        });
+
+        closeArchives.addEventListener('click', (e) => {
+            e.stopPropagation();
+            archivesViewer.classList.remove('active');
+        });
+
+        closePassword.addEventListener('click', (e) => {
+            e.stopPropagation();
+            passwordUI.classList.remove('active');
+        });
+
+        closeHidden.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hiddenContent.classList.remove('active');
+        });
+
+        passwordSubmit.addEventListener('click', checkPassword);
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+        // Password Check Function
+        function checkPassword() {
+            if (passwordInput.value === CORRECT_PASSWORD) {
+                passwordUI.classList.remove('active');
+                hiddenContent.classList.add('active');
+            } else {
+                passwordError.style.display = 'block';
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+
+        // Accessibility: Focus management
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (archivesViewer.classList.contains('active')) {
+                    archivesViewer.classList.remove('active');
+                } else if (passwordUI.classList.contains('active')) {
+                    passwordUI.classList.remove('active');
+                } else if (hiddenContent.classList.contains('active')) {
+                    hiddenContent.classList.remove('active');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
